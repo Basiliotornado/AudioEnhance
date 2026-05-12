@@ -9,7 +9,7 @@ using namespace geode::prelude;
 #include <Geode/modify/FMODAudioEngine.hpp>
 class $modify(FMODAudioEngine) {
 	void setupAudioEngine() {
-		// FMODAudioEngine::setupAudioEngine(); // so broken if this runs, god help us
+		// FMODAudioEngine::setupAudioEngine(); // this does not work
 		
 		FMOD::System       *system;
 		unsigned int        FMODVersion;
@@ -34,14 +34,12 @@ class $modify(FMODAudioEngine) {
 		this->m_system = system;
 		
 		system->getVersion(&FMODVersion);
-		FMOD::Debug_Initialize(0); // ok bro
+		FMOD::Debug_Initialize(0);
 		system->getStreamBufferSize(&filebuffersize, &filebuffersizetype);
-		// todo GameManager calls
-		
+
 		
 		system->getDSPBufferSize(&bufferlength, &numbuffers);
 		system->getSoftwareFormat(&samplerate, &speakermode, &numrawspeakers);
-		// todo set samplerate to game setting (44100/22050)
 		
 		gameManager = GameManager::get();
 		if (gameManager->getGameVariable(GameVar::IncreaseAudioBuffer)) {
@@ -63,7 +61,7 @@ class $modify(FMODAudioEngine) {
 		this->m_sampleRate = samplerate;
 		
 		
-		system->setAdvancedSettings(&settings); // This is where the magic happens?
+		system->setAdvancedSettings(&settings);
 		
 		this->m_lastResult = system->init(128, 0, 0); // todo third argument
 		
