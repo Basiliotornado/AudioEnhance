@@ -1,0 +1,24 @@
+{
+    "geode": "5.7.1",
+    "gd": {
+        "win": "2.2081",
+        "android": "2.2081",
+        "mac": "2.2081",
+        "ios": "2.2081"
+    },
+    "id": "basiliotornado.audioenhance",
+    "name": "AudioEnhance",
+    "version": "v0.1.0",
+    "developer": "basiliotornado",
+    "description": "Improves audio quality in high frequencies by setting FMod audio interpolation to spline rather than the default (linear).",
+    "dependencies": {},
+    "early-load": true,
+    "settings": {
+        "double-sr": {
+            "name": "Double Samplerate",
+            "type": "bool",
+            "default": true,
+            "requires-restart": true
+        }
+    }
+}
