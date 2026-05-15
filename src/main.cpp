@@ -1,7 +1,6 @@
 #include <Geode/Geode.hpp>
 
 #include <Geode/fmod/fmod.hpp>
-// #include <Geode/fmod/fmod_common.h>
 
 using namespace geode::prelude;
 
@@ -11,50 +10,44 @@ using namespace geode::prelude;
 #include <Geode/modify/System.hpp>
 class $modify(FMOD::System) {
 	FMOD_RESULT createStream(const char *name_or_data, FMOD_MODE mode, FMOD_CREATESOUNDEXINFO *exinfo, FMOD::Sound **sound) {
-		log::debug("Creating Stream: {}", name_or_data);
+		drmp3         mp3;
+		unsigned int  bufferLength;
+		drmp3_int64   frames;
+		drmp3_int16*  buffer;
+		drmp3_uint64  framesRead;
 		
-		drmp3 mp3;
-		drmp3_bool32 x = drmp3_init_file(&mp3, name_or_data, 0);
-		log::debug("{}", x);
-		if (!x) {
-			log::debug("Could not load: {}", name_or_data, x);
-			return FMOD::System::createStream(name_or_data, mode, exinfo, sound);
-		}
-		
-		drmp3_int64 frames = drmp3_get_pcm_frame_count(&mp3);
-		log::debug("MP3 frames: {}", frames);
-		
-		unsigned int buffer_length = frames * sizeof(drmp3_int16) * mp3.channels;
-		drmp3_int16 *buffer = new drmp3_int16[buffer_length];
-		
-		drmp3_uint64 framesRead = drmp3_read_pcm_frames_s16(&mp3, frames, buffer);
-		log::debug("framesRead: {}", framesRead);
-
 		// GD doesn't use exinfo, should be safe? Idk i'm new here
 		FMOD_CREATESOUNDEXINFO info;
 		memset(&info, 0, sizeof(info));
 		info.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
 		
-		info.numchannels = 2;
+		log::debug("Creating Stream: {}", name_or_data);
+		
+		if (!drmp3_init_file(&mp3, name_or_data, 0)) {
+			log::debug("Could not load");
+			return FMOD::System::createStream(name_or_data, mode, exinfo, sound);
+		}
+		
+		frames = drmp3_get_pcm_frame_count(&mp3);
+		log::debug("MP3 frames: {}", frames);
+		
+		bufferLength = frames * sizeof(drmp3_int16) * mp3.channels;
+		buffer = new drmp3_int16[bufferLength];
+		
+		framesRead = drmp3_read_pcm_frames_s16(&mp3, frames, buffer);
+		log::debug("framesRead: {}", framesRead);
+		
+		info.numchannels      = 2;
 		info.defaultfrequency = mp3.sampleRate;
-		info.format = FMOD_SOUND_FORMAT_PCM16;
-		info.length = buffer_length;
+		info.format           = FMOD_SOUND_FORMAT_PCM16;
+		info.length           = bufferLength;
 		
 		log::debug("Creating stream from raw");
 		
-		FMOD_RESULT result = FMOD::System::createStream((const char*)buffer, mode | FMOD_OPENMEMORY | FMOD_OPENRAW, &info, sound);
+		FMOD_RESULT result = FMOD::System::createStream((char const*)buffer, mode | FMOD_OPENMEMORY | FMOD_OPENRAW, &info, sound);
 		log::debug("FMOD_RESULT {}", (int)result);
 		return result;
 	}
-	
-	// FMOD_RESULT createSound(const char *name_or_data, FMOD_MODE mode, FMOD_CREATESOUNDEXINFO *exinfo, FMOD::Sound **sound) {
-	// 	// std::string path = name_or_data;
-	// 	log::debug("Creating Sound {}", name_or_data);
-	// 	return (FMOD_RESULT)0;
-	// }	
-	// FMOD_RESULT playSound(FMOD::Sound *sound, FMOD::ChannelGroup *channelgroup, bool paused, FMOD::Channel **channel) {
-	// 	return (FMOD_RESULT)0;
-	// }
 };
 
 #include <Geode/binding/GameManager.hpp>
@@ -63,19 +56,18 @@ class $modify(FMODAudioEngine) {
 	void setupAudioEngine() {
 		// FMODAudioEngine::setupAudioEngine(); // this does not work
 		
-		FMOD::System       *system;
-		unsigned int        FMODVersion;
-		unsigned int        filebuffersize;
-		FMOD_TIMEUNIT       filebuffersizetype;
-		unsigned int        bufferlength;
-		int                 numbuffers;
-		int                 samplerate;
-		FMOD_SPEAKERMODE    speakermode;
-		int                 numrawspeakers;
-		GameManager        *gameManager;
+		FMOD::System*      system;
+		unsigned int       FMODVersion;
+		unsigned int       fileBufferSize;
+		FMOD_TIMEUNIT      fileBufferSizeType;
+		unsigned int       bufferLength;
+		int                numBuffers;
+		int                samplerate;
+		FMOD_SPEAKERMODE   speakerMode;
+		int                numRawSpeakers;
+		GameManager*       gameManager;
 		
-		
-		FMOD_ADVANCEDSETTINGS  settings;
+		FMOD_ADVANCEDSETTINGS settings;
 		memset(&settings, 0, sizeof(FMOD_ADVANCEDSETTINGS));
 		settings.cbSize = sizeof(FMOD_ADVANCEDSETTINGS);
 
@@ -87,15 +79,15 @@ class $modify(FMODAudioEngine) {
 		
 		system->getVersion(&FMODVersion);
 		FMOD::Debug_Initialize(0);
-		system->getStreamBufferSize(&filebuffersize, &filebuffersizetype);
+		system->getStreamBufferSize(&fileBufferSize, &fileBufferSizeType);
 
 		
-		system->getDSPBufferSize(&bufferlength, &numbuffers);
-		system->getSoftwareFormat(&samplerate, &speakermode, &numrawspeakers);
+		system->getDSPBufferSize(&bufferLength, &numBuffers);
+		system->getSoftwareFormat(&samplerate, &speakerMode, &numRawSpeakers);
 		
 		gameManager = GameManager::get();
 		if (gameManager->getGameVariable(GameVar::IncreaseAudioBuffer)) {
-			bufferlength = 512;
+			bufferLength = 512;
 		}
 		if (gameManager->getGameVariable(GameVar::ReduceAudioQuality)) {
 			this->m_reducedQuality = true;
@@ -103,12 +95,12 @@ class $modify(FMODAudioEngine) {
 		}
 		
 		if (Mod::get()->getSettingValue<bool>("double-sr")) { // Doubling sr kinda helps
-			bufferlength *= 2;
+			bufferLength *= 2;
 			samplerate *= 2;
 		}
 		
-		system->setDSPBufferSize(bufferlength, numbuffers);
-		system->setSoftwareFormat(samplerate, speakermode, numrawspeakers); 
+		system->setDSPBufferSize(bufferLength, numBuffers);
+		system->setSoftwareFormat(samplerate, speakerMode, numRawSpeakers); 
 		this->m_sampleRate = samplerate;
 		
 		
@@ -127,12 +119,12 @@ class $modify(FMODAudioEngine) {
 		
 		FMOD::DSP *dsp;
 		system->createDSPByType(FMOD_DSP_TYPE_LIMITER,&dsp);
-		dsp->setParameterFloat(1, 0.0);
+		dsp->setParameterFloat(1, 0.0f);
 		dsp->setParameterBool(3, true);
 		this->m_globalChannel->addDSP(1, dsp);
 		
 		system->createDSPByType(FMOD_DSP_TYPE_LIMITER,&dsp);
-		dsp->setParameterFloat(1, 0.0);
+		dsp->setParameterFloat(1, 0.0f);
 		dsp->setParameterBool(3, true);
 		this->m_backgroundMusicChannel->addDSP(1, dsp);
 		
