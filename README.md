@@ -7,5 +7,7 @@ Currently, i've added 3 features:
 - and finally, adding an external MP3 loader (HUGE thanks to David Reid/mackron for [dr_mp3](https://github.com/mackron/dr_libs]!) to get around FMod's terrible mp3 loader.
 
 Credits:
+
 [mackron](https://github.com/mackron), for the public domain/mit-0 dr_mp3 library!
+
 Me
