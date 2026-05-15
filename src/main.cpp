@@ -5,6 +5,58 @@
 
 using namespace geode::prelude;
 
+#define DR_MP3_IMPLEMENTATION
+#include "dr_mp3.h"
+
+#include <Geode/modify/System.hpp>
+class $modify(FMOD::System) {
+	FMOD_RESULT createStream(const char *name_or_data, FMOD_MODE mode, FMOD_CREATESOUNDEXINFO *exinfo, FMOD::Sound **sound) {
+		log::debug("Creating Stream: {}", name_or_data);
+		
+		drmp3 mp3;
+		drmp3_bool32 x = drmp3_init_file(&mp3, name_or_data, 0);
+		log::debug("{}", x);
+		if (!x) {
+			log::debug("Could not load: {}", name_or_data, x);
+			return FMOD::System::createStream(name_or_data, mode, exinfo, sound);
+		}
+		
+		drmp3_int64 frames = drmp3_get_pcm_frame_count(&mp3);
+		log::debug("MP3 frames: {}", frames);
+		
+		unsigned int buffer_length = frames * sizeof(drmp3_int16) * mp3.channels;
+		drmp3_int16 *buffer = new drmp3_int16[buffer_length];
+		
+		drmp3_uint64 framesRead = drmp3_read_pcm_frames_s16(&mp3, frames, buffer);
+		log::debug("framesRead: {}", framesRead);
+
+		// GD doesn't use exinfo, should be safe? Idk i'm new here
+		FMOD_CREATESOUNDEXINFO info;
+		memset(&info, 0, sizeof(info));
+		info.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
+		
+		info.numchannels = 2;
+		info.defaultfrequency = mp3.sampleRate;
+		info.format = FMOD_SOUND_FORMAT_PCM16;
+		info.length = buffer_length;
+		
+		log::debug("Creating stream from raw");
+		
+		FMOD_RESULT result = FMOD::System::createStream((const char*)buffer, mode | FMOD_OPENMEMORY | FMOD_OPENRAW, &info, sound);
+		log::debug("FMOD_RESULT {}", (int)result);
+		return result;
+	}
+	
+	// FMOD_RESULT createSound(const char *name_or_data, FMOD_MODE mode, FMOD_CREATESOUNDEXINFO *exinfo, FMOD::Sound **sound) {
+	// 	// std::string path = name_or_data;
+	// 	log::debug("Creating Sound {}", name_or_data);
+	// 	return (FMOD_RESULT)0;
+	// }	
+	// FMOD_RESULT playSound(FMOD::Sound *sound, FMOD::ChannelGroup *channelgroup, bool paused, FMOD::Channel **channel) {
+	// 	return (FMOD_RESULT)0;
+	// }
+};
+
 #include <Geode/binding/GameManager.hpp>
 #include <Geode/modify/FMODAudioEngine.hpp>
 class $modify(FMODAudioEngine) {
@@ -49,7 +101,6 @@ class $modify(FMODAudioEngine) {
 			this->m_reducedQuality = true;
 			samplerate = 24000;
 		}
-		
 		
 		if (Mod::get()->getSettingValue<bool>("double-sr")) { // Doubling sr kinda helps
 			bufferlength *= 2;

@@ -1,8 +1,11 @@
 # AudioEnhance
 I aim to improve the sound quality of Geometry Dash with this mod.
 
-Currently, i only have 2 changes from stock Geometry Dash:
+Currently, i've added 3 features:
 - Changing interpolation type to Spline, results in about +2 dB from 8khz to 16khz
-- and doubling the samplerate, which i think helps maybe
+- Doubling the samplerate, which i think helps maybe
+- and finally, adding an external MP3 loader (HUGE thanks to David Reid/mackron for (dr_mp3)[https://github.com/mackron/dr_libs]!) to get around FMod's terrible mp3 loader.
 
-There's unfortunately still a 16khz cut, which from all i can gather is solely a problem with FMod. I couldn't find a fix at least.
+Credits:
+(mackron)[https://github.com/mackron], for the public domain/mit-0 dr_mp3 library!
+Me

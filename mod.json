@@ -8,9 +8,9 @@
     },
     "id": "basiliotornado.audioenhance",
     "name": "AudioEnhance",
-    "version": "v0.1.0",
+    "version": "v1.0.0",
     "developer": "basiliotornado",
-    "description": "Improves audio quality in high frequencies by setting FMod audio interpolation to spline rather than the default (linear).",
+    "description": "Improves audio quality by circumventing FMod's mp3 loader.",
     "dependencies": {},
     "early-load": true,
     "settings": {
