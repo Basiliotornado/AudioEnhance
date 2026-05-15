@@ -15,7 +15,8 @@ class $modify(FMOD::System) {
 		drmp3_int64   frames;
 		drmp3_int16*  buffer;
 		drmp3_uint64  framesRead;
-		
+		drmp3_bool32  mp3Result;
+		unsigned int  modeFlags;
 		// GD doesn't use exinfo, should be safe? Idk i'm new here
 		FMOD_CREATESOUNDEXINFO info;
 		memset(&info, 0, sizeof(info));
@@ -23,8 +24,9 @@ class $modify(FMOD::System) {
 		
 		log::debug("Creating Stream: {}", name_or_data);
 		
-		if (!drmp3_init_file(&mp3, name_or_data, 0)) {
-			log::debug("Could not load");
+		mp3Result = drmp3_init_file(&mp3, name_or_data, 0);
+		if (!mp3Result) {
+			log::debug("Could not load: {}", mp3Result);
 			return FMOD::System::createStream(name_or_data, mode, exinfo, sound);
 		}
 		
@@ -44,8 +46,10 @@ class $modify(FMOD::System) {
 		
 		log::debug("Creating stream from raw");
 		
-		FMOD_RESULT result = FMOD::System::createStream((char const*)buffer, mode | FMOD_OPENMEMORY | FMOD_OPENRAW, &info, sound);
+		modeFlags = FMOD_LOWMEM | FMOD_LOOP_NORMAL | FMOD_2D | FMOD_ACCURATETIME | FMOD_OPENMEMORY | FMOD_OPENRAW;
+		FMOD_RESULT result = FMOD::System::createSound((char const*)buffer, modeFlags, &info, sound);
 		log::debug("FMOD_RESULT {}", (int)result);
+		free(buffer);
 		return result;
 	}
 };

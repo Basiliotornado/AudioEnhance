@@ -1,3 +1,6 @@
+# 1.0.1
+- Memory leak lol
+
 # 1.0.0
 - Add external MP3 loader to avoid FMod's problems.
 
