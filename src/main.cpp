@@ -52,93 +52,16 @@ class $modify(FMOD::System) {
 		free(buffer);
 		return result;
 	}
-};
-
-#include <Geode/binding/GameManager.hpp>
-#include <Geode/modify/FMODAudioEngine.hpp>
-class $modify(FMODAudioEngine) {
-	void setupAudioEngine() {
-		// FMODAudioEngine::setupAudioEngine(); // this does not work
-		
-		FMOD::System*      system;
-		unsigned int       FMODVersion;
-		unsigned int       fileBufferSize;
-		FMOD_TIMEUNIT      fileBufferSizeType;
-		unsigned int       bufferLength;
-		int                numBuffers;
-		int                samplerate;
-		FMOD_SPEAKERMODE   speakerMode;
-		int                numRawSpeakers;
-		GameManager*       gameManager;
-		
+	
+	FMOD_RESULT init(int maxchannels, FMOD_INITFLAGS flags, void *extradriverdata) {
 		FMOD_ADVANCEDSETTINGS settings;
 		memset(&settings, 0, sizeof(FMOD_ADVANCEDSETTINGS));
 		settings.cbSize = sizeof(FMOD_ADVANCEDSETTINGS);
 
+		this->getAdvancedSettings(&settings);
 		settings.resamplerMethod = FMOD_DSP_RESAMPLER_SPLINE;
-
+		this->setAdvancedSettings(&settings);
 		
-		this->m_lastResult = FMOD::System_Create(&system, 0x20231);
-		this->m_system = system;
-		
-		system->getVersion(&FMODVersion);
-		FMOD::Debug_Initialize(0);
-		system->getStreamBufferSize(&fileBufferSize, &fileBufferSizeType);
-
-		
-		system->getDSPBufferSize(&bufferLength, &numBuffers);
-		system->getSoftwareFormat(&samplerate, &speakerMode, &numRawSpeakers);
-		
-		gameManager = GameManager::get();
-		if (gameManager->getGameVariable(GameVar::IncreaseAudioBuffer)) {
-			bufferLength = 512;
-		}
-		if (gameManager->getGameVariable(GameVar::ReduceAudioQuality)) {
-			this->m_reducedQuality = true;
-			samplerate = 24000;
-		}
-		
-		if (Mod::get()->getSettingValue<bool>("double-sr")) { // Doubling sr kinda helps
-			bufferLength *= 2;
-			samplerate *= 2;
-		}
-		
-		system->setDSPBufferSize(bufferLength, numBuffers);
-		system->setSoftwareFormat(samplerate, speakerMode, numRawSpeakers); 
-		this->m_sampleRate = samplerate;
-		
-		
-		system->setAdvancedSettings(&settings);
-		
-		this->m_lastResult = system->init(128, 0, 0); // todo third argument
-		
-		system->createChannelGroup(0, &this->m_backgroundMusicChannel);
-		this->m_backgroundMusicChannel->setVolumeRamp(false);
-		this->m_backgroundMusicChannel->getDSP(-1, &this->m_mainDSP);
-		this->m_mainDSP->setMeteringEnabled(false,true);
-		
-		system->createChannelGroup(0, &this->m_globalChannel);
-		system->createChannelGroup(0, &this->m_reverbChannel);
-		this->m_globalChannel->addGroup(this->m_reverbChannel, true, 0);
-		
-		FMOD::DSP *dsp;
-		system->createDSPByType(FMOD_DSP_TYPE_LIMITER,&dsp);
-		dsp->setParameterFloat(1, 0.0f);
-		dsp->setParameterBool(3, true);
-		this->m_globalChannel->addDSP(1, dsp);
-		
-		system->createDSPByType(FMOD_DSP_TYPE_LIMITER,&dsp);
-		dsp->setParameterFloat(1, 0.0f);
-		dsp->setParameterBool(3, true);
-		this->m_backgroundMusicChannel->addDSP(1, dsp);
-		
-		FMOD::DSP *reverbDSP;
-		system->createDSPByType(FMOD_DSP_TYPE_SFXREVERB, &reverbDSP);
-		this->m_reverbChannel->addDSP(0, reverbDSP);
-		
-		this->updateReverb(this->m_reverbPreset, true);
-		
-		this->m_globalChannel->getDSP(-1, &this->m_globalChannelDSP);
-		this->m_globalChannelDSP->setMeteringEnabled(false, true);
+		return FMOD::System::init(maxchannels, flags, extradriverdata);
 	}
 };
