@@ -82,7 +82,7 @@ class $modify(FMOD::System) {
 		
 		mp3Result = drmp3_init_file(mp3.get(), name_or_data, 0);
 		if (!mp3Result) {
-			log::debug("Could not load: {}", mp3Result);
+			log::warn("Could not load: {}", mp3Result);
 			return FMOD::System::createStream(name_or_data, mode, exinfo, sound);
 		}
 		
