@@ -13,7 +13,9 @@ FMOD_RESULT F_CALL seekBuffer(FMOD_SOUND* sound, int subsound, unsigned int pos,
 	void* pointer;
 	FMOD_Sound_GetUserData(sound, &pointer);
 	mp3 = (drmp3* )pointer;
+	
 	log::debug("Seeking to {}, {}, {}", pos, postype, subsound);
+	
 	drmp3_seek_to_pcm_frame(mp3, (drmp3_uint64)pos);
 	return FMOD_OK;
 }
@@ -23,12 +25,15 @@ FMOD_RESULT F_CALLBACK readBuffer(FMOD_SOUND* sound, void* data, unsigned int da
 	void* pointer;
 	FMOD_Sound_GetUserData(sound, &pointer);
 	mp3 = (drmp3* )pointer;
-	log::debug("MP3: {}, {}, {}, {}, {}, {}", (void*)mp3, (void*)pointer, mp3->pcmFramesConsumedInMP3Frame, mp3->channels, mp3->sampleRate, mp3->dataSize);
-	log::debug("At {} writing {}", (void*)data, datalen);
 	
-	drmp3_read_pcm_frames_s16(mp3, datalen / (mp3->channels * sizeof(drmp3_int16)), (drmp3_int16* )data);
+	// this makes too many prints so i'm turning it off
+	// log::debug("MP3: {}, {}, {}, {}, {}, {}", (void*)mp3, (void*)pointer, mp3->pcmFramesConsumedInMP3Frame, mp3->channels, mp3->sampleRate, mp3->dataSize);
+	// log::debug("At {} writing {}", (void*)data, datalen);
+	
+	int frames = datalen / (mp3->channels * sizeof(drmp3_int16));
+	drmp3_read_pcm_frames_s16(mp3, frames, (drmp3_int16* )data);
+	
 	log::debug("Done");
-
 	return FMOD_OK;
 };
 
@@ -39,6 +44,7 @@ class $modify(FMOD::Sound) {
 		drmp3* mp3;
 		void* pointer;
 		FMOD::Sound::getUserData(&pointer);
+		
 		if (pointer != nullptr) {
 			mp3 = (drmp3* )pointer;
 			
@@ -47,6 +53,7 @@ class $modify(FMOD::Sound) {
 			drmp3_uninit(mp3);
 			delete mp3;
 		}
+		
 		return FMOD::Sound::release();
 	}
 };
@@ -62,9 +69,8 @@ class $modify(FMOD::System) {
 		}
 		
 		unsigned int bufferLength;
-		drmp3_int64  frames = 0;
-		drmp3_uint64 framesRead = 0;
-		drmp3_bool32 mp3Result = 0;
+		drmp3_int64  frames;
+		drmp3_bool32 mp3Result;
 		FMOD_CREATESOUNDEXINFO info;
 		
 		// GD doesn't use exinfo, should be safe? Idk i'm new here
@@ -75,9 +81,8 @@ class $modify(FMOD::System) {
 		log::debug("Creating Stream: {}", name_or_data);
 		
 		mp3Result = drmp3_init_file(mp3.get(), name_or_data, 0);
-		log::debug("Result: {}", mp3Result);
 		if (!mp3Result) {
-			log::debug("Could not load: {}, {}", mp3Result, (void *)mp3.get());
+			log::debug("Could not load: {}", mp3Result);
 			return FMOD::System::createStream(name_or_data, mode, exinfo, sound);
 		}
 		
@@ -100,6 +105,7 @@ class $modify(FMOD::System) {
 		log::debug("Creating stream from raw");
 
 		FMOD_RESULT result = FMOD::System::createStream("", mode | FMOD_OPENUSER, &info, sound);
+		
 		log::debug("FMOD_RESULT {}", (int)result);
 		return result;
 	}
