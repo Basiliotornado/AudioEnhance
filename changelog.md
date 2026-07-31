@@ -1,3 +1,6 @@
+# 2.1.0
+- Use drmp3's seek points.
+
 # 2.0.0
 - Stream the audio instead of loading it all at once. Helps prevent lag spikes on song switches.
 

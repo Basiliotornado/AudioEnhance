@@ -22,8 +22,6 @@ FMOD_RESULT F_CALL seekBuffer(FMOD_SOUND* sound, int subsound, unsigned int pos,
 	drmp3* mp3;
 	mp3 = (drmp3* )getUserData(sound);
 	
-	log::debug("Seeking to {}, {}, {}", pos, postype, subsound);
-	
 	drmp3_seek_to_pcm_frame(mp3, (drmp3_uint64)pos);
 	return FMOD_OK;
 }
@@ -56,6 +54,10 @@ class $modify(FMOD::Sound) {
 			
 			log::debug("Destroying drmp3 {}", pointer);
 			
+			// Seek table will leak
+			delete mp3->pSeekPoints;
+			drmp3_bind_seek_table(mp3, 0, nullptr);
+			
 			drmp3_uninit(mp3);
 			delete mp3;
 		}
@@ -74,9 +76,11 @@ class $modify(FMOD::System) {
 			return FMOD::System::createStream(name_or_data, mode, exinfo, sound);
 		}
 		
-		unsigned int bufferLength;
-		drmp3_int64  frames;
-		drmp3_bool32 mp3Result;
+		unsigned int      bufferLength;
+		drmp3_int64       frames;
+		drmp3_bool32      mp3Result;
+		drmp3_seek_point* seek_points;
+		drmp3_uint32      num_seek_points;
 		FMOD_CREATESOUNDEXINFO info;
 		
 		// GD doesn't use exinfo, should be safe? Idk i'm new here
@@ -90,6 +94,15 @@ class $modify(FMOD::System) {
 		if (!mp3Result) {
 			log::warn("Could not load: {}", mp3Result);
 			return FMOD::System::createStream(name_or_data, mode, exinfo, sound);
+		}
+		
+		seek_points = new drmp3_seek_point[10000];
+		num_seek_points = 10000;
+		if (drmp3_calculate_seek_points(mp3.get(), &num_seek_points, seek_points)) {
+			drmp3_bind_seek_table(mp3.get(), num_seek_points, seek_points);
+			log::debug("Seek table added");
+		} else {
+			log::warn("Couldn't add seek table");
 		}
 		
 		frames = drmp3_get_pcm_frame_count(mp3.get());

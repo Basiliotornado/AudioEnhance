@@ -8,7 +8,7 @@
     },
     "id": "basiliotornado.audioenhance",
     "name": "AudioEnhance",
-    "version": "v2.0.0",
+    "version": "v2.1.0",
     "developer": "basiliotornado",
     "description": "Improves audio quality by messing with FMod.",
     "dependencies": {},
