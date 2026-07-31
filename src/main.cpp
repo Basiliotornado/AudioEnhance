@@ -33,7 +33,7 @@ FMOD_RESULT F_CALLBACK readBuffer(FMOD_SOUND* sound, void* data, unsigned int da
 	int frames = datalen / (mp3->channels * sizeof(drmp3_int16));
 	drmp3_read_pcm_frames_s16(mp3, frames, (drmp3_int16* )data);
 	
-	log::debug("Done");
+	// log::debug("Done");
 	return FMOD_OK;
 };
 
