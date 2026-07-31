@@ -8,17 +8,10 @@
     },
     "id": "basiliotornado.audioenhance",
     "name": "AudioEnhance",
-    "version": "v1.0.1",
+    "version": "v2.0.0",
     "developer": "basiliotornado",
     "description": "Improves audio quality by circumventing FMod's mp3 loader.",
     "dependencies": {},
     "early-load": true,
-    "settings": {
-        "double-sr": {
-            "name": "Double Samplerate",
-            "type": "bool",
-            "default": true,
-            "requires-restart": true
-        }
-    }
+    "settings": {}
 }
