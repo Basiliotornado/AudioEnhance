@@ -10,7 +10,7 @@
     "name": "AudioEnhance",
     "version": "v2.0.0",
     "developer": "basiliotornado",
-    "description": "Improves audio quality by circumventing FMod's mp3 loader.",
+    "description": "Improves audio quality by messing with FMod.",
     "dependencies": {},
     "early-load": true,
     "settings": {}
