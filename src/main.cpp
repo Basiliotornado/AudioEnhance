@@ -8,11 +8,19 @@ using namespace geode::prelude;
 #define DR_MP3_IMPLEMENTATION
 #include "dr_mp3.h"
 
+void* getUserData(FMOD_SOUND* sound) {
+	FMOD::Sound* cpp_sound;
+	void* pointer;
+	
+	cpp_sound = (FMOD::Sound* )sound;
+	cpp_sound->getUserData(&pointer);
+
+	return pointer;
+}
+
 FMOD_RESULT F_CALL seekBuffer(FMOD_SOUND* sound, int subsound, unsigned int pos, FMOD_TIMEUNIT postype) { 
 	drmp3* mp3;
-	void* pointer;
-	FMOD_Sound_GetUserData(sound, &pointer);
-	mp3 = (drmp3* )pointer;
+	mp3 = (drmp3* )getUserData(sound);
 	
 	log::debug("Seeking to {}, {}, {}", pos, postype, subsound);
 	
@@ -22,9 +30,7 @@ FMOD_RESULT F_CALL seekBuffer(FMOD_SOUND* sound, int subsound, unsigned int pos,
 
 FMOD_RESULT F_CALLBACK readBuffer(FMOD_SOUND* sound, void* data, unsigned int datalen) {
 	drmp3* mp3;
-	void* pointer;
-	FMOD_Sound_GetUserData(sound, &pointer);
-	mp3 = (drmp3* )pointer;
+	mp3 = (drmp3* )getUserData(sound);
 	
 	// this makes too many prints so i'm turning it off
 	// log::debug("MP3: {}, {}, {}, {}, {}, {}", (void*)mp3, (void*)pointer, mp3->pcmFramesConsumedInMP3Frame, mp3->channels, mp3->sampleRate, mp3->dataSize);
