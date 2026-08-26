@@ -1,3 +1,9 @@
+# 2.1.2
+- Resolve crash on nullptr audio paths. (Fixes crash with brainrot, my bad)
+
+# 2.1.1
+- Minor tweaks
+
 # 2.1.0
 - Use drmp3's seek points.
 

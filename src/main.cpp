@@ -70,6 +70,10 @@ class $modify(FMOD::Sound) {
 class $modify(FMOD::System) {
 	FMOD_RESULT createStream(const char *name_or_data, FMOD_MODE mode, FMOD_CREATESOUNDEXINFO *exinfo, FMOD::Sound **sound) {
 		
+		if (!name_or_data) {
+			// This is probably something fmod needs to handle
+			return FMOD::System::createStream(name_or_data, mode, exinfo, sound);
+		}
 		std::string str = std::string(name_or_data);
 		if (!str.ends_with("mp3")) {
 			log::debug("Probably not mp3, using FMOD: {}", name_or_data);
@@ -96,18 +100,17 @@ class $modify(FMOD::System) {
 			return FMOD::System::createStream(name_or_data, mode, exinfo, sound);
 		}
 		
-		seek_points = new drmp3_seek_point[10000];
+		// seek points are 24 bytes each, default 10k is 240kb, 100k would be 2.4mb.
 		num_seek_points = 10000;
+		
+		seek_points = new drmp3_seek_point[num_seek_points];
 		if (drmp3_calculate_seek_points(mp3.get(), &num_seek_points, seek_points)) {
 			drmp3_bind_seek_table(mp3.get(), num_seek_points, seek_points);
-			log::debug("Seek table added");
 		} else {
 			log::warn("Couldn't add seek table");
 		}
 		
 		frames = drmp3_get_pcm_frame_count(mp3.get());
-		
-		log::debug("MP3 frames: {}", frames);
 		
 		bufferLength = frames * sizeof(drmp3_int16) * mp3->channels;
 		
@@ -121,11 +124,9 @@ class $modify(FMOD::System) {
 		info.userdata          = mp3.release();
 		
 		log::debug("MP3: {}", (void* )&mp3);
-		log::debug("Creating stream from raw");
 
 		FMOD_RESULT result = FMOD::System::createStream("", mode | FMOD_OPENUSER, &info, sound);
 		
-		log::debug("FMOD_RESULT {}", (int)result);
 		return result;
 	}
 	
