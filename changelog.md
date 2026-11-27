@@ -1,3 +1,6 @@
+# 2.1.3
+- Geode 6.0.0
+
 # 2.1.2
 - Resolve crash on nullptr audio paths. (Fixes crash with brainrot, my bad)
 
